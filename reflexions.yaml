@@ -1,0 +1,147 @@
+title: Conception ISO->GeoDCAT-AP
+nomCourt: gdcatap
+objectif:
+  - générer des pages Hydra:PartialCollectionView à partir d'un ensemble de fux CSW/ISO de catalogues
+  - afficher une MDD en GeoDCAT-AP, en DCAT-AP ou en ISO
+extraitDocHydra:
+  '@context': 'http://www.w3.org/ns/hydra/context.jsonld'
+  '@id': 'http://api.example.com/an-issue/comments'
+  '@type': Collection
+  totalItems: 4980
+  member:
+    - '... a subset of the members of the Collection ...'
+  view:
+    '@id': 'http://api.example.com/an-issue/comments?page=3'
+    '@type': PartialCollectionView
+    first: '/an-issue/comments?page=1'
+    previous: '/an-issue/comments?page=2'
+    next: '/an-issue/comments?page=4'
+    last: '/an-issue/comments?page=498'
+url:
+  - https://geoapi.fr/gdcatap/export.php?page={page}
+  - https://geoapi.fr/gdcatap/index.php?cat={cat}&fid={fid}&fmt={fmt}
+option: stokage des fiches moissonnées et non moisson à la volée
+principes:
+  - moissonner tous les catalogues en bufferisant en CSW/ISO
+    - et en paralélisant entre les catalogues
+    - tester l'utilisation de getRecords en ISO à la place des getRecorById
+    - en effacant éventuellement les moissonnages précédents
+  - export hydra
+    - calculer à la volée la page hydra à partir des fiches moissonnées
+  - affichage d'une MDD
+    - sélection d'un catalogue
+    - soit
+      - sélection par identifiant de fiche
+      - recherche dans le catalogue d'une chaine
+        - affichage de la liste des fiches par leur titre
+        - choix d'une fiche et affichage en GeoDCAT-AP
+ - versions de moissons
+    - stockage de plusieurs versions successives des moissons
+    - lors d'une demande d'export sans identifiant de moisson
+      - c'est la dernière moisson terminée qui est sélectionnée
+    - un n-uplet harvest représente une version de moissons
+      - lors du démarrage des moissons, un n-uplet harvest est créé
+      - à la fin des moissons, le moment de fin est enregistré, indiquant que la moisson est exportable
+    - à la fin d'une moisson, la version précédente est conservée par exemple 1 jour pour permettre la fin d'un export en cours
+modifContenu:
+  - ajout du catalogue dans la description GeoDCAT-AP de la fiche
+  - ajout de la liste des catalogues
+files:
+  catalogs.yaml: liste des catalogues
+  rparty:
+    {catId}.yaml: liste des respParties utilisée pour sélectionner les fiches du catalogue
+  harvests:
+    harvest{i}:
+      {catId}:
+        {md5}.xml: cache des réponses aux requêtes CSW
+      {catId}.json: définition des pages d'export avec pour chacune les fid des fiches contenues dans la page
+      root.json: répartition des pages entre les catalogues, fournit pour chaque catalogue le no de la première page
+implem:
+  catalogs.yaml:
+    - liste des catalogues chacun identifié par un nom court
+  harvest.php(cli):
+    - moissonne les catalogues
+      - fork un process par catalogue
+    - stocke des réponses Ok aux appels CSW dans un cache = fichier harvests/havest{id}/{catalogId}/md5(params).xml
+  rparties.php:
+    - génère les rparty des fiches non sélectionnées pour vérifier qu'il ne faut pas les rajouter à rparty/{catId}.yaml
+    - l'ajout se fait à la main dans rparty/{catId}.yaml
+  buildPages.php:
+    - construit harvests/harvest{i}/{catId}.json et harvests/harvest{i}/root.json
+  export.php?model={model}&harvest={harvest}&page={page}:
+    - génération de la page {page} de l'export pour la version de moisson {harvest} en jsonld
+    - si la moisson {harvest} n'est pas définie
+      - si la page {page} est définie et <> 0 alors erreur
+      - sinon la moisson {harvest} est la dernière moisson finalisée au moment de l'appel
+    - si la moisson {harvest} n'existe plus alors erreur
+    - sélectionne en fonction du no de page de lacatlogue et l'intervalle des enregistrements
+    - construit la page à partir de ces enregistrements
+  index.php/{cat}/{fid}/{model}.{fmt}:
+    - {model}:
+      GeoDCAT-AP: défaut
+      DCAT-AP.jsonld:
+    - {fmt}:
+      html: défaut
+      xml:
+      ttl:
+      jsonld:
+      yamlld:
+    - si {cat} n'est pas défini
+      - alors affichage de la liste des catalogues pour en sélectionner un
+    - si {fid} n'est pas défini
+      - alors
+        - affichage d'un formulaire pour taper un texte
+        - affichage des titres des fiches contenant le texte pour sélectionner une fiche
+    - si {model} ou {fmt} non défini
+      - alors affichage du modèle GeoDCAT-AP eh Html avec possibilité de change de modèle et de format
+    - sinon affichage de la fiche dans le modèle et le format demandés
+  
+
+previous13h13:
+  tables:
+    cat:
+      comment: table des catalogues
+    page:
+      comment: un n-uplet correspond à une page Hydra
+      fields:
+        num:
+          type: integer
+          key: yes
+          comment: no de page à partir de 1 et en séquence
+        catUrl:
+          type: string
+          comment: URL du catalog CSW/ISO
+  conception:
+    - la table des catalogues est gérée à la main dans un fichier Yaml
+    - un script effectue un getRecords sur chaque catalogue pour connaitre le nombre de datasets exposés
+      - en déduit le nombre de pages GeoDCAT-AP
+      - génère le fichier page qui réalise le mapping entre une page Hydro et un getRecords d'un des catalogues
+    - lors de l'appel d'une page Hydra
+      - on regarde dans le fichier page de quel getRecords il s'agit
+    
+  previous2023-12-15T08:30:
+    objectif:
+      - exposer un flux Hydra/GeoDCAT-AP à partir d'un ensemble de fux CSW/ISO de catalogues
+      - 2 options:
+        - construire un cache plus ou moins complet et servir les pages Hydra à partir de ce cache
+        - faire correspondre à une page hydra un buffer CSW et faire la conversion àa la volée
+    mécanisme:
+      - faire initialement une requête getRecords/brief de chacun des catalogues pour déterminer le nombre de fiches par catalogue
+      - définir un mapping no de page Hydra -> catalogue/no de page CSW
+      - aller chercher les fiches ISO/CSW lorsqu'une page Hydra est demandée
+
+    extraitDocHydra:
+      '@context': 'http://www.w3.org/ns/hydra/context.jsonld'
+      '@id': 'http://api.example.com/an-issue/comments'
+      '@type': Collection
+      totalItems: 4980
+      member:
+        - '... a subset of the members of the Collection ...'
+      view:
+        '@id': 'http://api.example.com/an-issue/comments?page=3'
+        '@type': PartialCollectionView
+        first: '/an-issue/comments?page=1'
+        previous: '/an-issue/comments?page=2'
+        next: '/an-issue/comments?page=4'
+        last: '/an-issue/comments?page=498'
+eof:

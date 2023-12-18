@@ -1,0 +1,177 @@
+title: liste de catalogues CSW connus
+$schema:
+  $id: http://geoapi.fr/gdcatap/catalog.yaml#$schema
+  definitions:
+    ogcFilter:
+      description: |
+        Filtre encodé en object respectant "OpenGIS® Filter Encoding 1.1.0" (OGC 04-095).
+        La conversion object en XML est définie par arrayToXml()
+        A compléter.
+      type: object
+      additionalProperties: false
+      required: [Filter]
+      properties:
+        Filter:
+          type: object
+          patternProperties:
+            ^(PropertyIsEqualTo)$:
+              type: object
+              properties:
+                PropertyName:
+                  type: string
+                Literal:
+                  type: string
+    httpOptions:
+      type: object
+      additionalProperties: false
+      properties:
+        max-retries:
+          description: nbre de relances à faire en cas de timeout, défaut 0 <=> un seul appel
+          type: integer
+        throw-on-error:
+          description: lance une exception en cas d'erreur'
+        timeout:
+          description: Délai maximal d'attente pour la lecture, sous la forme d'un nombre décimal (e.g. 10.5)
+          type: number
+        Accept:
+          description: liste des types MIME demandés, ex 'application/json,application/geo+json'
+          type: string
+    catalog:
+      description: description d'un catalogue.
+      type: object
+      additionalProperties: false
+      required: [title, cswUrl]
+      properties:
+        title:
+          type: string
+          description: titre du catalogue
+        off:
+          description: si défini alors le catalogue n'est pas moissonné
+          const: true
+        cswUrl:
+          type: string
+          description: URL CSW sans les paramètres CSW
+        cswPost:
+          description: si défini alors le serveur doit être interrogé en POST
+          const: true
+        filter:
+          description: filtre encodé en object respectant "OpenGIS® Filter Encoding 1.1.0" (OGC 04-095)
+          $ref: '#/definitions/ogcFilter'
+        homepage:
+          type: string
+          description: URL du site HTML du catalogue ou de la plateforme
+        httpOptions:
+          description: options à utiliser dans les appels HTTP GetRecords au serveur CSW
+          $ref: '#/definitions/httpOptions'
+    catalogs:
+      description: dictionnaire de catalogues
+      type: object
+      additionalProperties: false
+      patternProperties:
+        ^[-a-zA-Z0-9]+$:
+          $ref: '#/definitions/catalog'
+  type: object
+  additionnalProperties: false
+  required: [title, $schema, catalogs]
+  properties:
+    title:
+      type: string
+    $schema: http://json-schema.org/schema#
+    catalogs:
+      $ref: '#/definitions/catalogs'
+    eof:
+      type: 'null'
+  
+catalogs:
+  # nationaux
+  # Géo-IDE
+  gide:
+    title: Géo-IDE-GN/POST avec un filtre sur type=dataset
+    cswUrl: http://catalogue.geo-ide.developpement-durable.gouv.fr/catalogue/srv/eng/csw-moissonnable
+    cswPost: true
+    filter:
+      Filter:
+        PropertyIsEqualTo:
+          PropertyName: dc:type
+          Literal: dataset
+  sextant:
+    title: Sextant (Ifremer) (GeoNetwork 4.2.5)
+    cswUrl: https://sextant.ifremer.fr/geonetwork/srv/fre/csw
+  dataeaufr:
+    title: Data Eau France
+    cswUrl: https://data.eaufrance.fr/geosource/srv/fre/csw
+  sandre:
+    title: Sandre (EauFrance)
+    cswUrl: http://www.sandre.eaufrance.fr/atlas/srv/fre/csw
+  naturefrance:
+    title: NatureFrance
+    cswUrl: https://data.naturefrance.fr/geonetwork/srv/fre/csw
+  geolittoral:
+    title: GéoLittoral
+    cswUrl: https://www.mongeosource.fr/geosource/1111/fre/csw
+  cerema-data:
+    title: Cerema Data
+    cswUrl: https://www.cdata.cerema.fr/geonetwork/srv/fre/csw-catalogue-cdata
+  igngp:
+    title: Géoportail IGN
+    cswUrl: https://wxs.ign.fr/catalogue/csw
+  igngpf:
+    title: Géoplateforme IGN
+    cswUrl: https://data.geopf.fr/csw
+  sas:
+    off: true
+    title: GéoSAS.fr - INRAE / UMR SAS - Institut Agro Rennes Angers (GN 3.8.3)
+    cswUrl: https://geosas.fr/geonetwork/srv/fre/csw
+    homepage: https://geosas.fr/
+  geo2france:
+    title: Géo2France
+    cswUrl: https://www.geo2france.fr/geonetwork/srv/fre/csw
+  geobretagne:
+    title: GéoBretagne
+    cswUrl: http://geobretagne.fr/geonetwork/srv/fre/csw
+  datara:
+    title: DatARA
+    cswUrl: https://www.datara.gouv.fr/geonetwork/srv/eng/csw-RAIN
+  sigloire:
+    title: sigloire
+    cswUrl: https://catalogue.sigloire.fr/geonetwork/srv/fr/csw-sigloire
+  sigena:
+    title: Sigena - Nouvelle-Aquitaine - Dreal (GeoNetwork 3.10.4.0)
+    cswUrl: https://www.sigena.fr/geonetwork/srv/fre/csw
+  pigma:
+    title: PIGMA - Nouvelle-Aquitaine - Région (GeoNetwork 3.10.6.0)
+    cswUrl: https://www.pigma.org/geonetwork/srv/fre/csw
+  picto:
+    title: Picto Occitanie
+    cswUrl: https://www.picto-occitanie.fr/geonetwork/srv/fre/csw-geocatalogue
+  bfc:
+    title: IDéO BFC
+    cswUrl: https://inspire.ternum-bfc.fr/geonetwork/srv/fre/csw
+    homepage: https://ideo.ternum-bfc.fr/
+  odd-corse:
+    title: Observatoire du Développement Durable de Corse (DREAL Corse)
+    cswUrl: https://georchestra.ac-corse.fr/geonetwork/srv/fre/csw
+  geoguyane:
+    title: GéoGuyane
+    cswUrl: https://catalogue.geoguyane.fr/geonetwork/srv/fre/csw-geoguyane
+  guyane-sig:
+    title: Guyane SIG
+    cswUrl: https://catalogue.guyane-sig.fr/geonetwork/srv/fre/csw
+  geomartinique:
+    title: GéoMartinique
+    cswUrl: http://www.geomartinique.fr/geonetwork/srv/fre/csw
+  karugeo:
+    title: Karugeo (Guadeloupe)
+    cswUrl: https://www.karugeo.fr/geonetwork/srv/fre/csw
+  mayotte:
+    title: Observatoire de Mayotte
+    cswUrl: https://www.observatoire-de-mayotte.fr/geonetwork/srv/fre/csw
+  eea:
+    off: true
+    title: Agence européenne de l'enviuronnement
+    cswUrl: https://sdi.eea.europa.eu/catalogue/srv/eng/csw
+  error:
+    off: true
+    title: serveur erreur pour tests
+    cswUrl: http://localhost/geoapi/gndcat/cswservertest.php
+eof:
