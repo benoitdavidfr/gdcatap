@@ -312,7 +312,7 @@ class CswServer {
   /** Retourne l'URL du GetRecords en GET.
    * @param array<mixed>|null $filter
    */
-  function getRecordsUrl(string $type, string $ElementSetName, int $startPosition, ?array $filter=null): string {
+  function getRecordsUrl(string $type, string $ElementSetName, int $startPosition, ?array $filter=null, int $maxRecords=100): string {
     $OutputSchema = urlencode(self::MODEL_PARAMS[$type]['OutputSchema']);
     $namespace = urlencode(self::MODEL_PARAMS[$type]['namespace']);
     $TypeNames = self::MODEL_PARAMS[$type]['TypeNames'];
@@ -321,7 +321,7 @@ class CswServer {
     
     return $this->cswUrl
       ."?SERVICE=CSW&VERSION=2.0.2&REQUEST=GetRecords&ElementSetName=$ElementSetName"
-      .'&ResultType=results&MaxRecords=100&OutputFormat=application/xml'
+      ."&ResultType=results&MaxRecords=$maxRecords&OutputFormat=application/xml"
       ."&OutputSchema=$OutputSchema&NAMESPACE=$namespace&TypeNames=$TypeNames"
       ."&startPosition=$startPosition"
       .($filter ? '&CONSTRAINTLANGUAGE=FILTER&CONSTRAINT_LANGUAGE_VERSION=1.1.0&CONSTRAINT='.urlencode(arrayToXml($filter)) : '');
@@ -332,11 +332,11 @@ class CswServer {
    * Pour une requête sans filtre utiliser [].
    * @param array<mixed>|null $filter
    */
-  function getRecords(string $type, string $ElementSetName, int $startPosition, ?array $filter=null): string {
+  function getRecords(string $type, string $ElementSetName, int $startPosition, ?array $filter=null, int $maxRecords=100): string {
     if ($this->post)
-      $result = $this->getRecordsInPost($type, $ElementSetName, $startPosition, $filter);
+      $result = $this->getRecordsInPost($type, $ElementSetName, $startPosition, $filter, $maxRecords);
     else
-      $result = $this->getRecordsInGet($type, $ElementSetName, $startPosition, $filter);
+      $result = $this->getRecordsInGet($type, $ElementSetName, $startPosition, $filter, $maxRecords);
     //var_dump($result);
     if ($result === false)
       throw new Exception("Erreur dans l'appel de getRecords");
@@ -353,16 +353,16 @@ class CswServer {
   /** Réalise un GetRecords en GET
    * @param array<mixed>|null $filter
    */
-  private function getRecordsInGet(string $type, string $ElementSetName, int $startPosition, ?array $filter=null): string|false {
+  private function getRecordsInGet(string $type, string $ElementSetName, int $startPosition, ?array $filter=null, int $maxRecords=100): string|false {
     //echo "CswServer::getRecords(startPosition=$startPosition)<br>\n";
-    $url = $this->getRecordsUrl($type, $ElementSetName, $startPosition, $filter);
+    $url = $this->getRecordsUrl($type, $ElementSetName, $startPosition, $filter, $maxRecords);
     return $this->cache->get($url, $this->httpOptions);
   }
   
   /** Réalise un GetRecords en POST
    * @param array<mixed>|null $filter
    */
-  private function getRecordsInPost(string $type, string $ElementSetName, int $startPosition, ?array $filter=null): string|false {
+  private function getRecordsInPost(string $type, string $ElementSetName, int $startPosition, ?array $filter=null, int $maxRecords=100): string|false {
     $OutputSchema = self::MODEL_PARAMS[$type]['OutputSchema'];
     $namespace = self::MODEL_PARAMS[$type]['namespace'];
     $TypeNames = self::MODEL_PARAMS[$type]['TypeNames'];
@@ -371,7 +371,7 @@ class CswServer {
       $filter = $this->filter;
     
     $query = '<?xml version="1.0" encoding="utf-8"?>'."\n"
-      ."<GetRecords service='CSW' version='2.0.2' maxRecords='10'\n"
+      ."<GetRecords service='CSW' version='2.0.2' maxRecords='$maxRecords'\n"
       ."  startPosition='$startPosition' resultType='results' outputFormat='application/xml'\n"
       ."  outputSchema='$OutputSchema' xmlns='http://www.opengis.net/cat/csw/2.0.2'\n"
       ."  xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'\n"

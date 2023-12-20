@@ -135,6 +135,30 @@ catalogs:
   sigloire:
     title: sigloire
     cswUrl: https://catalogue.sigloire.fr/geonetwork/srv/fr/csw-sigloire
+  sigloire2:
+    title: sigloire filtré sur dc:type=dataset
+    cswUrl: https://catalogue.sigloire.fr/geonetwork/srv/fr/csw-sigloire
+    filter:
+      Filter:
+        PropertyIsEqualTo:
+          PropertyName: dc:type
+          Literal: dataset
+  sigloire3:
+    title: sigloire avec requête pattern matchnig
+    cswUrl: https://catalogue.sigloire.fr/geonetwork/srv/fr/csw-sigloire
+    filter:
+      Filter:
+        PropertyIsLike:
+          PropertyName: AnyText
+          Literal: '%eau%'
+  sigloire4:
+    title: sigloire avec requête pattern matchnig sur title
+    cswUrl: https://catalogue.sigloire.fr/geonetwork/srv/fr/csw-sigloire
+    filter:
+      Filter:
+        PropertyIsLike:
+          PropertyName: title
+          Literal: '%eau%'
   sigena:
     title: Sigena - Nouvelle-Aquitaine - Dreal (GeoNetwork 3.10.4.0)
     cswUrl: https://www.sigena.fr/geonetwork/srv/fre/csw

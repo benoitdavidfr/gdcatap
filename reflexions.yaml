@@ -20,7 +20,9 @@ extraitDocHydra:
 url:
   - https://geoapi.fr/gdcatap/export.php?page={page}
   - https://geoapi.fr/gdcatap/index.php?cat={cat}&fid={fid}&fmt={fmt}
-option: stokage des fiches moissonnées et non moisson à la volée
+option:
+  - stokage des fiches moissonnées et non moisson à la volée pour export.php
+  - appel à la volée du service de base et non utilisation des données stockées pour index.php
 principes:
   - moissonner tous les catalogues en bufferisant en CSW/ISO
     - et en paralélisant entre les catalogues
@@ -77,21 +79,25 @@ implem:
     - sélectionne en fonction du no de page de lacatlogue et l'intervalle des enregistrements
     - construit la page à partir de ces enregistrements
   index.php/{cat}/{fid}/{model}.{fmt}:
+    - principes
+      - chaque appel conduit à un appel sur le service base
+      - non utilisation des données stockées
     - {model}:
       GeoDCAT-AP: défaut
-      DCAT-AP.jsonld:
+      DCAT-AP:
     - {fmt}:
-      html: défaut
+      html: défaut en interactif
       xml:
       ttl:
-      jsonld:
+      jsonld: défaut en API
       yamlld:
     - si {cat} n'est pas défini
       - alors affichage de la liste des catalogues pour en sélectionner un
     - si {fid} n'est pas défini
       - alors
         - affichage d'un formulaire pour taper un texte
-        - affichage des titres des fiches contenant le texte pour sélectionner une fiche
+        - requête CSW pour obtenir les fiches contenant le texte
+        - affichage des titres de ces fiches pour en sélectionner une
     - si {model} ou {fmt} non défini
       - alors affichage du modèle GeoDCAT-AP eh Html avec possibilité de change de modèle et de format
     - sinon affichage de la fiche dans le modèle et le format demandés
